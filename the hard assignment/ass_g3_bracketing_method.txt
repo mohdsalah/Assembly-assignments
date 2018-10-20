@@ -1,0 +1,57 @@
+%include "io.inc"
+section .data
+xl : dd -10.0
+xu : dd 5.0
+xm : dd 0.0
+coeffecients : dd 0.0,12.0,15.0,2.0
+fxlm : dd 0.0 
+finans : dd 0.0 
+formatStr : db "the root is %f   ",0
+section .text
+global CMAIN
+CMAIN:
+    mov ebp, esp; for correct debugging
+    finit
+    fld dword [xl]
+    fadd dword [xu]
+    fdiv dword [coeffecients+12]
+    fstp dword[xm]
+    finit
+    fld dword [xm]
+    fmul dword [coeffecients+4]
+    fsub dword [coeffecients+8]
+    fstp dword[fxlm+4]
+    finit
+    fld dword [xl]
+    fmul dword [coeffecients+4]
+    fsub dword [coeffecients+8]
+    fstp dword[fxlm]
+    finit 
+    fld dword[coeffecients]
+    fld dword[fxlm]
+    fmul dword[fxlm+4]
+    fcomi st0,st1
+    jg greater
+    jl less
+    je end
+    
+greater:
+    finit
+    fld dword[xm]
+    fstp dword[xl]
+    jmp CMAIN
+less:
+    finit
+    fld dword[xm]
+    fstp dword[xu]
+    jmp CMAIN
+end:
+    finit
+    fld dword[xm]
+    sub esp,8
+    fstp qword[esp]
+    push formatStr
+    call _printf
+    add esp,12
+    
+    ret

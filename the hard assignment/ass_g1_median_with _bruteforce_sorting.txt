@@ -1,0 +1,69 @@
+%include "io.inc"
+
+section .data
+    array: dd 5.2,2.7,8.9,12.5,1.3
+    N: dd 5
+    coeffecient: dd 2
+    coeffecient1: dd 2.0
+    median: dd 0
+section .text
+global CMAIN
+CMAIN:
+    mov ebp, esp; for correct debugging
+    ;write your code here
+    xor eax, eax
+    dec dword[N]
+    mov ecx,0
+    loop1:
+    mov esi,0
+    loop2:
+    fld dword[array+esi*4]
+    fld dword[array+esi*4+4]
+    fcomi st0,st1
+    ja swap
+    conditioner:
+    finit
+    inc esi
+    cmp esi,[N]
+    jl loop2
+    inc ecx
+    cmp ecx,[N]
+    jl loop1
+    push array
+    push N
+    call medianCalc
+    add esp,8
+    ret
+    swap:
+    fstp dword[array+esi*4]
+    fstp dword[array+esi*4+4]
+    jmp conditioner
+medianCalc:
+    push ebp
+    mov ebp,esp
+    mov esi,[ebp+12]
+    mov ecx,[ebp+8]
+    mov eax,[ecx]
+    mov ebx,[coeffecient]
+    div ebx
+    cmp edx,0
+    je even
+    mov eax,[ecx]
+    div ebx
+    fld dword[esi+4*eax]
+    dec eax
+    fld dword[esi+4*eax]
+    faddp
+    fdiv dword[coeffecient1]
+    fstp dword[median]
+    jmp end2
+    even:
+    mov eax,[ecx]
+    dec eax
+    div ebx
+    fld dword[esi+4*eax]
+    fstp dword[median]
+    end2:
+    mov esp,ebp
+    pop ebp
+    ret

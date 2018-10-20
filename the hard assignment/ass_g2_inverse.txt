@@ -1,0 +1,735 @@
+
+
+%include "io.inc"
+global _main
+
+section .data
+A: dq 1.0,2.0,3.0,4.0,5.0,6.0,3.0,8.0,9.0
+N: dd 3
+Lmat: times 100 dq 0
+Umat: times 100 dq 0
+N_N_IDENTITY_MAT:times 100 dq 0
+Z_matrix:times 100 dq 0
+B_matrix:times 100 dq 0
+size_of_qword: dd 8
+Aij: dq 0.0
+New_Line: dd 10
+Print_matA: db 'A = ',10,0
+Print_matB: db 'B = ',10,0
+Print_mat:db '%0.2f         ',0
+
+section .text
+_main:
+    mov ebp, esp; for correct debugging
+finit
+mov ebx, A
+mov edi,Lmat
+mov esi,Umat
+mov edx,[N]
+
+mov ecx,0
+lab1:
+cmp ecx,edx
+je finish1
+fld qword[ebx+ 8*ecx] 
+fstp qword[esi+ 8*ecx]
+inc ecx
+jmp lab1
+finish1:
+
+mov ecx,1
+mov eax,edx ; N
+lab2:
+cmp ecx,edx
+jge finish2
+push edx
+mul ecx ;N*ecx
+pop edx
+fld qword[ebx+ 8*eax]  ;N*ecx*8
+fstp qword[edi+ 8*eax] ;N*ecx*8
+inc ecx
+jmp lab2
+finish2:
+
+
+
+
+
+mov ecx,0
+loop1:
+mov edx,0
+;i=n? [
+push eax
+mov eax,[N]
+dec eax
+cmp ecx,eax
+jge THE__END
+pop eax
+; ]
+inc ecx ; i
+loop2:
+inc edx ; j
+
+;
+cmp ecx,edx
+jle U_MATRIX_LABEL ;i>=j
+jg L_MATRIX_LABEL ;i<j
+;
+U_MATRIX_LABEL:
+
+pushad
+mov eax,ecx
+push edx
+mul dword[N] ; i*n
+pop edx
+add eax,edx ; i*n + j
+mul dword[size_of_qword] ;(i*n +j)*8
+;
+; A(i,j)=
+fld qword[ebx+ eax]
+fstp qword[Aij]
+popad
+; sum =
+;[ 
+pushad
+mov ebx,0 ; m=0
+fldz
+loop3:
+;
+mov eax,ecx ; eax = i , edx=m
+push edx ;;;;;;;
+mul dword[N] ; i*n
+pop edx ;;;;;;;
+add eax,ebx ; (i*n + m)
+push edx
+mul dword[size_of_qword] ;(i*n +m)*8
+pop edx
+
+; L(i,m) =
+fld qword[edi + eax]
+;
+;
+mov eax,ebx ; eax = m , edx=m
+push edx ;;;;;;;
+mul dword[N] ; m*n
+pop edx ;;;;;;;
+add eax,edx ; (m*n + j)
+push edx
+mul dword[size_of_qword] ;(m*n +j)*8
+pop edx
+
+;U(m,j)*L=
+fmul qword[esi+eax]
+;
+fadd
+;
+inc ebx
+cmp ebx,ecx
+
+jne loop3 ; check again !!
+popad
+;]
+fchs
+fadd qword[Aij]
+;;
+pushad
+mov eax,ecx
+push edx
+mul dword[N] ; i*n
+pop edx
+add eax,edx ; i*n + j
+mul dword[size_of_qword] ;(i*n +j)*8
+;
+; U(i,j)=
+fstp qword[esi+ eax]
+popad
+;;
+
+; j =n ?? [
+push eax
+mov eax,[N]
+dec eax
+cmp edx,eax
+pop eax
+jl loop2
+; ]
+jmp loop1
+;]
+L_MATRIX_LABEL:
+;
+pushad
+mov eax,ecx
+push edx
+mul dword[N] ; i*n
+pop edx
+add eax,edx ; i*n + j
+mul dword[size_of_qword] ;(i*n +j)*8
+;
+; A(i,j)=
+fld qword[ebx+ eax]
+fstp qword[Aij]
+popad
+;
+; sum =
+;[ 
+pushad
+mov ebx,0 ; m=0
+fldz
+loop4:
+;
+mov eax,ecx ; eax = i , edx=m
+push edx ;;;;;;;
+mul dword[N] ; i*n
+pop edx ;;;;;;;
+add eax,ebx ; (i*n + m)
+push edx
+mul dword[size_of_qword] ;(i*n +m)*8
+pop edx
+
+; L(i,m) =
+fld qword[edi + eax]
+;
+;
+mov eax,ebx ; eax = m , edx=m
+push edx ;;;;;;;
+mul dword[N] ; m*n
+pop edx ;;;;;;;
+add eax,edx ; (m*n + j)
+push edx
+mul dword[size_of_qword] ;(m*n +j)*8
+pop edx
+
+;U(m,j)*L=
+fmul qword[esi+eax]
+;
+fadd
+;
+inc ebx
+cmp edx,ebx ; j,m
+jne loop4 
+popad
+;]
+fchs
+fadd qword[Aij]
+;
+pushad
+mov eax,edx ; j
+push edx
+mul dword[N] ; j*n
+pop edx
+add eax,edx ; j*n + j
+mul dword[size_of_qword] ;(j*n +j)*8
+;
+; U(j,j)=
+fld qword[esi+ eax]
+popad
+;
+fdiv
+;
+pushad
+mov eax,ecx
+push edx
+mul dword[N] ; i*n
+pop edx
+add eax,edx ; i*n + j
+mul dword[size_of_qword] ;(i*n +j)*8
+;
+; L(i,j)=
+fstp qword[edi+ eax]
+popad
+;
+; j =n ?? [
+push eax
+mov eax,[N]
+dec eax
+cmp edx,eax
+pop eax
+jle loop2
+; ]
+jmp loop1
+;]
+
+THE__END:
+pop eax
+;L(i,i) =1
+xor eax,eax
+xor ecx,ecx
+push ebx
+mov ebx,[N]
+loop5:
+mov eax,ecx ; eax = i
+push edx
+mul dword[N] ;i*n
+pop edx
+add eax,ecx ; (i*n+i)
+mul dword[size_of_qword] ;(i*n+i)*8
+;
+fld1
+fstp qword[edi+eax]
+inc ecx
+cmp ecx,ebx
+je donee1
+jmp loop5
+donee1:
+pop ebx
+;
+;set N_N_IDENTITY_MAT:
+
+xor eax,eax
+xor ecx,ecx
+push esi
+mov esi,N_N_IDENTITY_MAT
+push ebx
+mov ebx,[N]
+loop55:
+mov eax,ecx ; eax = i
+push edx
+mul dword[N] ;i*n
+pop edx
+add eax,ecx ; (i*n+i)
+mul dword[size_of_qword] ;(i*n+i)*8
+;
+fld1
+fstp qword[esi+eax]
+inc ecx
+cmp ecx,ebx
+je donee2
+jmp loop55
+;
+donee2:
+pop ebx
+pop esi
+
+
+;;;;;;;; 1/
+mov esi,N_N_IDENTITY_MAT
+mov edi,Lmat
+mov eax,-1; k
+mov ebx,0 ; i
+mov ecx,-1 ; j
+mov edx,[N]
+;
+for111:
+inc eax
+cmp eax,edx
+je done111
+;
+fld qword[esi+eax]
+push edx
+mov edx,Z_matrix
+fstp qword[eax,edx]
+pop edx
+;
+mov ebx,0
+for222:
+;
+fldz
+inc ebx
+cmp ebx,edx
+je for111
+;
+mov ecx,-1
+for333:
+inc ecx
+;sum=
+
+;L(i,j)=
+push eax
+mov eax,ebx ; i
+push edx
+mul dword[N] ; i*N
+pop edx
+add eax,ecx;i*N+j
+push edx
+mul dword[size_of_qword];(i*N+j)*8
+pop edx
+fld qword[edi+eax] ;L(i,j)
+pop eax
+;
+;z(j,k)
+push edi
+push eax
+push ebx
+mov ebx,eax;ebx=k
+mov edi,Z_matrix
+mov eax,ecx;j
+push edx
+mul dword[N];j*N
+pop edx
+add eax,ebx ; j*N+k
+push edx
+mul dword[size_of_qword] ; (j*N+k)*8
+pop edx
+fmul qword[edi+eax];L(i,j)*z(j,k)
+pop ebx
+pop eax
+pop edi
+;
+fadd
+;
+push ebx
+dec ebx
+cmp ebx,ecx
+pop ebx
+jne for333
+;
+fchs
+;
+;I(i,k)=
+push eax
+push ecx
+mov ecx,eax; ecx = k
+mov eax,ebx ; ebx=i
+push edx
+mul dword[N] ; i*N
+pop edx
+add eax,ecx ;i*N+k
+push edx
+mul dword[size_of_qword];(i*N+k)*8
+pop edx
+fld qword[esi+eax]; I(i,k)
+pop ecx
+pop eax
+;
+;
+fadd
+;
+;z(i,k)
+push eax
+push ecx
+push esi
+mov esi,Z_matrix
+mov ecx,eax; ecx = k
+mov eax,ebx ; ebx=i
+push edx
+mul dword[N] ; i*N
+pop edx
+add eax,ecx ;i*N+k
+push edx
+mul dword[size_of_qword];(i*N+k)*8
+pop edx
+fstp qword[esi+eax]; I(i,k)
+pop esi
+pop ecx
+pop eax
+;
+finit
+jmp for222
+done111:
+;
+;;;;;;;;2/
+mov esi,Z_matrix
+mov edi,Umat
+mov eax,-1; k
+mov ebx,[N] ; i
+dec ebx ;i-1
+mov ecx,[N] ; j
+mov edx,[N]
+;
+for1111:
+inc eax
+cmp eax,edx
+je done1111
+;
+;z(n-1,k)=
+push eax
+push ebx 
+mov ebx,eax ; ebx=k
+mov eax,[N]
+dec eax ; eax=N-1
+push edx
+mul dword[N] ;(N-1)*N
+pop edx
+add eax,ebx ;((N-1)*N)+k
+push edx
+mul dword[size_of_qword] ;(((N-1)*N)+k)*8
+fld qword[esi+eax] ;z(n-1,k)
+pop edx
+pop ebx
+pop eax
+;
+;U((N-1),(N-1))=
+push eax
+push edi
+mov edi,Umat
+mov eax,[N]
+dec eax ; eax=N-1
+push edx
+mul dword[N] ;(N-1)*N
+pop edx
+add eax,[N] ;((N-1)*N)+N
+dec eax ; ((N-1)*N)+N-1
+push edx
+mul dword[size_of_qword] ;(((N-1)*N)+N)*8
+pop edx
+fld qword[edi+eax] ;U(N-1,N-1)
+pop edi
+pop eax
+;
+fdiv
+;
+;B(n-1,k)=
+push eax
+push ebx
+push esi
+mov esi,B_matrix
+mov ebx,eax ; ebx=k
+mov eax,[N]
+dec eax ; eax=N-1
+push edx
+mul dword[N] ;(N-1)*N
+pop edx
+add eax,ebx ;((N-1)*N)+k
+push edx
+mul dword[size_of_qword] ;(((N-1)*N)+k)*8
+fstp qword[esi+eax] ;B(n-1,k)
+pop edx
+pop esi
+pop ebx
+pop eax
+;
+mov ebx,[N]
+dec ebx
+;
+for2222:;i
+;
+fldz
+dec ebx
+cmp ebx,-1
+je for1111
+;
+mov ecx,[N]
+;
+for3333:
+dec ecx
+;sum=
+
+;U(i,j)=
+push eax
+mov eax,ebx ; i
+push edx
+mul dword[N] ; i*N
+pop edx
+add eax,ecx;i*N+j
+push edx
+mul dword[size_of_qword];(i*N+j)*8
+pop edx
+fld qword[edi+eax] ;U(i,j)
+pop eax
+;
+;B(j,k)
+push edi
+push eax
+push ebx
+mov ebx,eax;ebx=k
+mov edi,B_matrix
+mov eax,ecx;j
+push edx
+mul dword[N];j*N
+pop edx
+add eax,ebx ; j*N+k
+push edx
+mul dword[size_of_qword] ; (j*N+k)*8
+pop edx
+fmul qword[edi+eax];U(i,j)*B(j,k)
+pop ebx
+pop eax
+pop edi
+;
+fadd
+;
+push ebx
+inc ebx
+cmp ebx,ecx
+pop ebx
+jne for3333
+;
+fchs
+;
+;Z(i,k)=
+push eax
+push ecx
+mov ecx,eax; ecx = k
+mov eax,ebx ; ebx=i
+push edx
+mul dword[N] ; i*N
+pop edx
+add eax,ecx ;i*N+k
+push edx
+mul dword[size_of_qword];(i*N+k)*8
+pop edx
+fld qword[esi+eax]; Z(i,k)
+pop ecx
+pop eax
+;
+;
+fadd
+;U(i,i)=
+push eax
+mov eax,ebx ; i
+push edx
+mul dword[N] ; i*N
+pop edx
+add eax,ebx;i*N+i
+push edx
+mul dword[size_of_qword];(i*N+i)*8
+pop edx
+fld qword[edi+eax] ;U(i,i)
+pop eax
+;
+fdiv
+;
+;B(i,k) 
+push eax
+push ecx
+push esi
+mov esi,B_matrix
+mov ecx,eax; ecx = k
+mov eax,ebx ; ebx=i
+push edx
+mul dword[N] ; i*N
+pop edx
+add eax,ecx ;i*N+k
+push edx
+mul dword[size_of_qword];(i*N+k)*8
+pop edx
+fstp qword[esi+eax]; B(i,k)
+pop esi
+pop ecx
+pop eax
+;
+finit
+jmp for2222
+;;;;;;;
+done1111:
+; printing
+;
+push dword[N]
+push dword[N]
+push A
+call print3
+add esp,12
+;
+push dword[N]
+push dword[N]
+push B_matrix
+call print
+add esp,12
+ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  print: 
+    ;;;;;;;;;;;;;
+    push Print_matB
+    call _printf
+    add esp,4
+    ;;;;;;;;;;;;;
+    mov edi,[esp+8] ; m
+    mov esi,[esp+12] ;n
+    mov ebx,[esp+4] ; mat
+
+    mov ecx,-1 ; i
+    mov edx,-1 ;j
+    L1:
+    inc ecx
+    mov edx,-1
+    cmp ecx,edi
+    je finished_printing
+    ;
+    L2:
+    inc edx
+    pushad
+    ;mat(i,j):
+    ;
+    push eax
+    mov eax,ecx ; eax=i
+    push edx
+    mul esi ;i*n
+    pop edx
+    add eax,edx ;i*n+j
+    push edx
+    mov edx,8 
+    mul edx ;(i*n+j)*8
+    fld qword[ebx+eax]; mat(i,j)
+    pop edx
+    pop eax
+    ;
+
+    sub esp,8
+    fstp qword[esp]
+    push Print_mat
+    call _printf
+    add esp,12
+    popad
+    push esi
+    dec esi
+    cmp edx,esi
+    pop esi
+    jl L2
+    ;;;;;;;;;;;;;;;;
+    pushad
+    push New_Line
+    call _printf
+    add esp,4
+    popad
+    jmp L1
+    finished_printing:
+    ret
+    ;;;;;;;;;
+         print3: ; void print(mat,raws,coulmns);
+    ;;;;;;;;;;;;;
+    push Print_matA
+    call _printf
+    add esp,4
+    ;;;;;;;;;;;;;
+    mov edi,[esp+8] ; m
+    mov esi,[esp+12] ;n
+    mov ebx,[esp+4] ; mat
+
+    mov ecx,-1 ; i
+    mov edx,-1 ;j
+    L111:
+    inc ecx
+    mov edx,-1
+    cmp ecx,edi
+    je finished_printing2
+    ;
+    L222:
+    inc edx
+    pushad
+    ;mat(i,j):
+    ;
+    push eax
+    mov eax,ecx ; eax=i
+    push edx
+    mul esi ;i*n
+    pop edx
+    add eax,edx ;i*n+j
+    push edx
+    mov edx,8 
+    mul edx ;(i*n+j)*8
+    fld qword[ebx+eax]; mat(i,j)
+    pop edx
+    pop eax
+    ;
+
+    sub esp,8
+    fstp qword[esp]
+    push Print_mat
+    call _printf
+    add esp,12
+    popad
+    push esi
+    dec esi
+    cmp edx,esi
+    pop esi
+    jl L222
+    ;;;;;;;;;;;;;;;;
+    pushad
+    push New_Line
+    call _printf
+    add esp,4
+    popad
+    jmp L111
+    finished_printing2:
+    ret

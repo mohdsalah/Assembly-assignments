@@ -1,0 +1,110 @@
+%include "io.inc"
+
+section .text
+global CMAIN
+CMAIN:
+    mov ebp, esp; for correct debugging
+    ;write your code here
+    xor eax, eax
+    ;; change the num of allowed iterations
+    ;; program runs normally using debug process 
+    call newtonRaphson
+    ret
+    ;; x^2 + x
+newtonRaphson:
+    
+    finit
+    fld DWORD [x0]
+    fmul DWORD [x0]
+    fadd DWORD [x0]     
+    fstp DWORD [fx]     ;; f(x) = x^2 + x
+    
+   
+    fld DWORD [x0]
+    fmul DWORD [two]
+    fadd DWORD [one]     
+    fstp DWORD [divfx]     ;; f`(x) = 2x + 1
+    
+  
+    fld DWORD [fx]
+    fdiv DWORD [divfx]      
+    fstp DWORD [h]         ;; h = f(x) / f`(x) --- calculated tolerance
+    
+    fld DWORD [x0]
+    fstp DWORD [x]
+    
+    mov ecx , 0  
+    loo:
+        cmp ecx , [allowedNumOfiterations]
+        je stop
+        
+        mov eax ,[h]
+        cmp eax , [EPSILON]
+        jna finish
+        
+        finit
+        ;;_____________
+        fld DWORD [x]
+        fmul DWORD [x]
+        fadd DWORD [x]     
+        fstp DWORD [fx]     ;; f(x) = x^2 + x
+        
+        fld DWORD [x]
+        fmul DWORD [two]
+        fadd DWORD [one]     
+        fstp DWORD [divfx]     ;; f`(x) = 2x + 1
+        
+        fld DWORD [fx]
+        fdiv DWORD [divfx]      
+        fstp DWORD [h]         ;; h = f(x) / f`(x) --- calculated tolerance
+        ;;______________
+        
+        finit
+        fld DWORD [x]       ;;;;;;;;;;;;;;;;;;;;;;;;;;
+        fsub DWORD [h]      ;;  x = x - h
+        fstp DWORD [x]      ;;;;;;;;;;;;;;;;;;;;;;;;;;
+        
+        
+         
+        inc ecx
+        jmp loo
+        
+    
+    
+    stop:
+        ;; notify the user ,,e.g: print sth..
+     
+        jmp finish
+         
+        
+        
+
+ finish: 
+    
+    ret   
+section .data
+divfx: dd 0.0
+fx: dd 0.0
+h: dd 0.0        ;;f`(x)/f(x)
+
+x: dd 0.0
+
+x0: dd -20.0
+EPSILON: dd 0.001
+allowedNumOfiterations: dd 5
+two: dd 2.0
+one: dd 1.0
+
+
+
+
+
+
+
+
+
+
+
+
+
+

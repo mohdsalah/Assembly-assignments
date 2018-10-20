@@ -1,0 +1,73 @@
+%include "io.inc"
+extern _printf
+section .data
+Array: dq 1.2,5.6,1.2,8.9,7.1
+N: dd 5
+frequency: dd 0
+mostFrequent: dd 0
+modeIndex: dd 0
+modee: dq 0.0
+formatStr: db "the mode of the array is %f",0
+section .text
+global _main
+_main:
+    mov ebp, esp; for correct debugging
+    ;write your code here
+    xor eax, eax
+    push Array
+    push N
+    push ebp
+    mov ebp,esp
+    call Mode
+    add esp,12
+    sub esp,8
+    fld qword[modee]
+    fstp qword[esp]
+    push formatStr
+    call _printf
+    add esp,12
+    ret
+Mode:
+    mov eax,[ebp+4]
+    mov edi,[eax]
+    mov esi,0
+    mov ecx,0
+    mov ebx,0
+    forloop1:
+    cmp esi,edi
+    mov edx,[ebp+8]
+    jge end
+    mov ecx,0
+    forloop2:
+    cmp ecx,edi
+    jge chp2
+    fld qword[edx+8*esi]
+    fld qword[edx+8*ecx]
+    fcomi st0,st1
+    je counter
+    finit
+    chp1:
+    inc ecx
+    jmp forloop2
+    counter:
+    inc ebx
+    cmp ebx,[frequency]
+    jl returner
+    mov [frequency],ebx
+    finit
+    jmp chp1
+    returner:
+    jmp forloop2
+    chp2:
+    cmp ebx,[mostFrequent]
+    jl chp3
+    mov [mostFrequent],ebx
+    mov [modeIndex],esi
+    chp3:
+    inc esi
+    mov ebx,0
+    jmp forloop1
+    end:
+    mov eax,[modeIndex]
+    fld qword[edx+8*eax]
+    ret

@@ -1,0 +1,275 @@
+%include "io.inc"
+
+section .text
+global CMAIN
+CMAIN:
+    mov ebp, esp; for correct debugging
+    ;write your code here
+    xor eax, eax
+    call lu
+    call determinant
+    
+    ret
+ lu:
+      mov ebx , 0     ;;; i is ebx
+   
+        
+      L1:  
+        cmp ebx , [n]
+        je finish
+        mov ecx , 0   ;;; ecx is j
+            
+      Lj1:
+        cmp ecx , [n]
+        je secBlock
+        
+        cmp ecx , ebx
+        jl  Jli1     ;j<i
+        mov edx , [n]                   ;;;;;;;;;;;;;;;;;;;;;
+        imul edx , ecx                  ;;
+        add edx , ebx   ;(edx*3 + ebx)  ;; l[j][i] = a[j][i]
+        mov eax  , [A + edx*4]          ;;
+        mov [L + edx*4] , eax           ;;;;;;;;;;;;;;;;;;;;;
+                                        
+        
+        mov edx , 0         ;;; k counter
+        jmp  look1           
+        jmp Lje1 
+      
+       
+      Jli1:                 ;; j less than i
+      
+            mov eax , [n]
+            imul eax , ecx     
+            add eax , ebx   
+            finit
+            fld DWORD [zero]
+            fstp DWORD [L + eax*4]  
+           ; mov [L + eax*4] , edi   ;;l[j][i] = 0
+                     
+      Lje1:
+        inc ecx
+        jmp Lj1
+ ;;___________________________________________________________________;;
+ secBlock:
+      mov ecx , 0
+      Lj2:
+        cmp ecx , [n]
+        je Le1
+        cmp ecx , ebx
+        jl  Jli2     ;j<i
+        je  Jeqi     ;j=i
+        
+        mov eax , [n]
+        imul eax , ebx
+        add eax , ecx                   
+        fld DWORD [A + eax*4]                ;A[i][j]
+        
+        mov edi , [n]
+        imul edi , ebx
+        add edi , ebx                       ;;edi -> [i][i]
+        fdiv DWORD [L + edi*4]               ;;a[i][j]/l[i][i]
+        fstp DWORD [U + eax*4]               ;;u[i][j] = |^|
+        
+        mov edx , 0
+        jmp look2
+        
+        
+      
+      Jli2:
+        mov edi , 0
+        mov eax , [n]
+        imul eax , ebx     
+        add eax , ecx 
+        finit
+        fld DWORD [zero]
+        fstp DWORD [U + eax*4]  
+       ; mov [U + eax*4] , edi   ;;u[i][j] = 0
+        jmp Lje2
+      Jeqi:
+       
+        mov eax , [n]
+        imul eax ,  ebx
+        add eax , ecx              
+        finit
+        fld DWORD [one]
+        fstp DWORD [U + eax*4]  
+        ;mov [U + edx*4] , edi      ;U[i][j] = 1
+        
+        
+      Lje2:
+        inc ecx
+        jmp   Lj2
+        
+      
+      Le1:
+        inc ebx
+        jmp L1
+        
+      look1:
+            cmp edx , ebx       ;k= 0 --> i
+            je Lje1 
+            finit
+            
+            mov eax , [n]
+            imul eax , ecx  ;;j*n
+            add eax , edx
+            fld DWORD [L + eax*4]  ;;l[j][k]
+            
+            mov eax , [n]
+            imul eax , edx
+            add eax , ebx           ;;u[k][i]
+            fmul DWORD [U + eax*4]   ;; st[0] = l[j][k]*u[k][i]            
+            
+            fmul DWORD [minus1]  
+            
+            mov eax , [n]
+            imul eax , ecx
+            add eax , ebx   
+            fadd DWORD [L + eax*4]  
+            fstp DWORD [L + eax*4]  ;; l[j][i]
+          
+            inc edx
+            jmp look1
+            
+        look2:
+            cmp edx , ebx       ;k= 0 --> i
+            je Lje2 
+            finit
+            
+            mov eax , [n]       
+            imul eax , ebx           ;; i*n
+            add eax , edx   
+            fld DWORD [L + eax*4]    ;;l[i][k]
+            
+            mov eax , [n]
+            imul eax , edx
+            add eax , ecx            ;;u[k][j]
+            fmul DWORD [U + eax*4]   ;; st[0] = l[i][k]*u[k][j]            
+            
+            mov eax , [n]
+            imul eax , ebx
+            add eax , ebx            
+            fdiv DWORD [L + eax*4]   ;;l[i][i]
+           
+            fmul DWORD [minus1]  
+            
+            mov eax , [n]
+            imul eax ,  ebx
+            add eax , ecx            
+            fadd DWORD [U + eax*4]   ;;u[i][j]
+               
+            fstp DWORD [U + eax*4]
+            
+          
+            inc edx
+            jmp look2
+            
+            
+            
+ ;____________________________________________________________________________________________________________;
+ determinant:
+    mov ebx , 0
+    finit
+    fld DWORD [one]
+    lp1:
+       
+    cmp ebx , [n]
+    je end
+    
+    mov ecx , 0
+    lp2:
+        cmp ecx , [n]
+        je lpe1
+        
+        cmp ebx , ecx
+        jne lpe2
+        mov eax , [n]
+        imul eax , ebx
+        add eax , ecx
+        
+        fmul DWORD [L + eax*4]      ;;L[i][i]
+        
+        
+        
+    
+    lpe2:
+        inc ecx
+        jmp lp2
+            
+    
+    lpe1:
+        inc ebx
+        jmp lp1
+    end:    
+        fstp DWORD [det]     
+           
+        jmp finish
+        
+    
+        
+
+
+    
+    ;_______________________________________________________________________________________________________;
+ printArr:
+        ;mov esi , [esp + 4]
+        mov ecx , 0
+        
+        Lo1: 
+            cmp ecx , 3
+            je finish
+            mov edx , 0
+        Lo2:
+            cmp edx , 3
+            je Lo1e
+            
+            mov eax , 3
+            imul  eax , ecx
+            add eax , edx
+            mov ebx , [U + eax*4]
+            push edx
+            push ecx
+            push ebx
+            push format
+            call printf
+            add esp , 8
+            pop ecx
+            pop edx
+            
+            inc edx
+            jmp Lo2
+                
+                
+                
+          Lo1e:  
+            inc ecx
+            jmp Lo1
+                
+ finish: ret                            
+                
+section .data
+A: dd 2.0 , 4.0 , 2.0,
+    dd 3.0 , 09.0 , 2.0,
+     dd 9.0 , 6.0 , 5.0
+n: dd 3
+N: dd 9
+     
+L: dd 0.0 , 0.0 , 0.0,
+    dd 0.0 , 0.0 , 0.0,
+     dd 0.0 , 0.0 , 0.0
+   
+    
+U: dd 0.0 , 0.0 , 0.0,
+       dd 0.0 , 0.0 , 0.0,
+       dd 0.0 , 0.0 , 0.0
+format: db "%f , ", 0
+minus1: db -1
+one: dd 1.0
+zero: dd 0.0
+
+det: dd 5.0
+
+
+
+

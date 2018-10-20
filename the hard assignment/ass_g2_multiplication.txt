@@ -1,0 +1,146 @@
+%include "io.inc"
+
+section .text
+global CMAIN
+CMAIN:
+    mov ebp, esp; for correct debugging
+    ;write your code here
+    xor eax, eax
+    mov eax ,B
+    push eax
+    mov eax ,A
+    push eax
+    call mult
+    add esp , 8
+    call printArr
+    
+    
+    ret
+    
+mult:
+    mov esi , [esp +4]
+    mov edi , [esp +8]
+    mov ecx , 0
+    
+    L1:
+        mov eax , [r1]
+        cmp ecx , eax      
+        je finish
+        push ecx                       ;--------->i
+        mov ecx , 0
+        L2:
+            mov eax, [c2]
+            cmp ecx , eax             ; -------->j
+            je  Le1
+            push ecx
+            mov ecx , 0
+        L3:
+           mov eax , [c1]
+           cmp ecx , eax               ;------>k
+           je Le2
+           finit
+           pop edx                      ;; j in edx
+           pop ebx                      ;; i in ebx
+           
+           mov eax , ebx            ;;;;;;;;;;;;;
+           imul eax , [c1]          ;; A[i][k]
+           add eax , ecx            ;;;;;;;;;;;;;
+           fld DWORD [esi + eax*4]
+           
+           mov eax , ecx            ;;;;;;;;;;;;;
+           imul eax , [c2]          ;; B[k][j]
+           add eax , edx            ;;;;;;;;;;;;;
+           fmul DWORD [edi + eax*4]
+           
+           mov eax , ebx            ;;;;;;;;;;;;;
+           imul eax , [c1]          ;; C[i][j]
+           add eax , edx            ;;;;;;;;;;;;;   
+           fadd DWORD [ans + eax*4]      
+           fstp DWORD [ans + eax*4]
+           
+           
+           push ebx                     ;store i again
+           push edx                     ;store j again
+           
+            
+            
+        Le3:
+            inc ecx
+            jmp L3   
+        Le2:
+            pop ecx    
+            inc ecx
+            jmp L2
+        Le1:
+            pop ecx
+            inc ecx
+            jmp L1
+
+;_______________________________________________________________________________________________________;
+ printArr:
+        ;mov esi , [esp + 4]
+        mov ecx , 0
+        
+        Lo1: 
+            cmp ecx , 3
+            je finish
+            mov edx , 0
+        Lo2:
+            cmp edx , 3
+            je Lo1e
+            finit
+            push edx
+            push ecx
+            
+            mov eax , [c2]
+            imul  eax , ecx
+            add eax , edx
+            fld dword [ans + eax*4]
+            sub esp , 8
+            fstp qword [esp]
+
+            push format
+            call printf
+            add esp , 12
+            
+            pop ecx
+            pop edx
+            
+            inc edx
+            jmp Lo2
+                
+                
+                
+          Lo1e:  
+            inc ecx
+            jmp Lo1
+        
+          finish:ret   
+
+section .data
+format: dd "%f,",0
+r1: dd 3
+c1: dd 3
+r2: dd 3
+c2: dd 3
+
+A: dd 1.0 , 0.0 , 0.0,
+    dd 1.0 , 6.3 , 7.1,
+     dd 5.5 , 9.4 , 8.3
+     
+B: dd 5.4 , 36.5 , 3.2,
+    dd 10.4 , 68.9 , 9.2,
+     dd 52.8 , 4.8 , 6.6
+
+ans: dd 0, 0 , 0,
+    dd 0 , 0 , 0,
+     dd 0 , 0 , 0     
+     
+     
+     
+     
+     
+     
+     
+     
+     

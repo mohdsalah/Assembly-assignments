@@ -1,0 +1,108 @@
+%include "io.inc"
+
+section .text
+global CMAIN
+CMAIN:
+    mov ebp, esp; for correct debugging
+    ;write your code here
+    xor eax, eax
+    ;;f(x) = x^2 + x
+    call secant
+    ret
+secant:
+  
+    finit
+    ;;fx1
+    fld DWORD [x1]
+    fmul DWORD [x1]
+    fadd DWORD [x1]
+    fstp DWORD [fx1]
+    
+    ;;fx2
+    fld DWORD [x2]
+    fmul DWORD [x2]
+    fadd DWORD [x2]
+    fstp DWORD [fx2]
+    
+    finit
+    ;;x0        the intermediate
+    fld DWORD [fx1]     ;;st3
+    fld DWORD [fx2]     ;;st1
+    fsub        ;; fx2 - fx1 in st2
+    
+    fld DWORD [fx1]     
+    fmul DWORD [x2]     ;; st1
+    
+    fld DWORD [fx2]         
+    fmul DWORD [x1]     ;;st0
+    
+    fsub st0 , st1      ;;(x1*fx2  - x2 * fx1) in st0
+    fdiv st0 , st2
+    fstp DWORD [x0]
+    
+    ;;c          check if it's the root
+    finit
+    fld DWORD [fx1]
+    fmul DWORD [fx2]
+    fstp DWORD [c]
+    
+    mov eax , [x2]
+    mov [x1] , eax      ;;x1 = x2
+    mov eax ,[x0]
+    mov [x2] , eax    ;;x2 = x0
+    
+    mov eax ,0
+    cmp [c] , eax
+    je finish       ;; root is found 
+    
+    ;;_________________________
+    finit
+    ;;xm       
+    fld DWORD [fx1]     ;;st3
+    fld DWORD [fx2]     ;;st1
+    fsub        ;; fx2 - fx1 in st2
+    
+    fld DWORD [fx1]     
+    fmul DWORD [x2]     ;; st1
+    
+    fld DWORD [fx2]         
+    fmul DWORD [x1]     ;;st0
+    
+    fsub st0 , st1      ;;(x1*fx2  - x2 * fx1) in st0
+    fdiv st0 , st2
+    fstp DWORD [xm]
+    
+    finit
+    fld DWORD [x0]
+    fld DWORD [x1]
+    fsub
+    
+    ;;cmp [val = fabs(xm - x0) >= E]
+    ;; c is used as a temporary var here
+    finit
+    fld DWORD [xm]
+    fsub DWORD [x0]
+    fstp DWORD [c]
+    mov  eax , [c]
+    cmp  eax, [EPSILON]
+    ja secant
+    
+    
+    
+finish: ret
+        
+
+section .data
+fx1: dd 0.0
+fx2: dd 0.0
+c: dd 0.0   
+
+EPSILON: dd 0.001
+xm: dd 0.0
+x1: dd 0.0
+x2: dd 1.0
+x0: dd 0.0
+
+
+
+

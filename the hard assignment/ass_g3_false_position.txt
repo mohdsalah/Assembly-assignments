@@ -1,0 +1,81 @@
+%include "io.inc"
+section .data
+xl : dd -15.0
+xu : dd 20.0
+xr : dd 0.0,0.0
+fxul : dd 2.0,1.0
+den : dd 0.0
+coeffecients : dd 0.0,16.0,100.0
+sum : dd 0.0,0.0
+formatStr : db "the root of the equation is %f",0
+error : dd 0.0,0.5
+section .text
+global CMAIN
+CMAIN:
+    mov ebp, esp; for correct debugging
+    finit
+    fld dword [xr]
+    fstp dword[xr+4]
+    fld dword [fxul+4]
+    fsub dword [fxul]
+    fstp dword[den]
+    fld dword[xu]
+    fmul dword [fxul+4]
+    fstp dword[sum]
+    fld dword[xl]
+    fmul dword [fxul]
+    fstp dword[sum+4]
+    fld dword[sum]
+    fsub dword[sum+4]
+    fdiv dword[den] 
+    fstp dword[xr]  
+    finit
+    fld dword[xr]
+    fsub dword[xr+4]
+    fdiv dword[xr]
+    fmul dword[coeffecients+8]
+    fabs
+    fstp dword[error] 
+    finit
+    fld dword[error+4]
+    fld dword[error]
+    fcomi st0,st1
+    jb end 
+    ;X^2-16=0
+    finit
+    fld dword [xu]
+    fmul dword [xu]
+    fsub dword [coeffecients+4]
+    fstp dword[fxul]
+    finit
+    fld dword [xl]
+    fmul dword [xl]
+    fsub dword [coeffecients+4]
+    fstp dword[fxul+4]
+    finit 
+    fld dword[coeffecients]
+    fld dword[fxul+4]
+    fmul dword[fxul]
+    fcomi st0,st1
+    ja greater
+    jb less
+    je end
+greater:
+    finit
+    fld dword[xr]
+    fstp dword[xl]
+    jmp CMAIN
+less:
+    finit
+    fld dword[xr]
+    fstp dword[xu]
+    jmp CMAIN
+end:
+    finit
+    fld dword[xr]
+    sub esp,8
+    fstp qword[esp]
+    push formatStr
+    call _printf
+    add esp,12    
+    ret

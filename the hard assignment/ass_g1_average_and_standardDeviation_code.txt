@@ -1,0 +1,83 @@
+%include "io.inc"
+section .data
+    M: dq 1.2,5.6,8.3,9.7,5.4
+    N: dd 5     ;length of the array as integer for the loop
+    N1: dq 5.0
+    x: dq 0.0
+    m_x: dq 0.0
+    m_xsquare: dq 0.0
+    s: dq 0.0
+section .text
+global CMAIN
+CMAIN:
+    mov ebp, esp; for correct debugging
+    ;write your code here
+    xor eax, eax
+    finit
+    pushAd
+    push M
+    sub esp,8
+    fld qword[N1]
+    fstp qword[esp]
+    call average
+    fstp qword[x]
+    add esp,12
+    popAd
+    ;Calculation of the standard deviation
+    sub esp,8
+    fld qword[x]
+    fstp qword[esp]
+    push M
+    sub esp,8
+    fld qword[N1]
+    fstp qword[esp]
+    call standardDeviation
+    add esp,20
+    ret
+average:
+    push ebp
+    mov ebp,esp
+    mov esi,0
+    mov eax,[ebp+16]
+    fld qword[eax]
+    calculator:
+    inc esi
+    cmp esi,[N]
+    jg finalstep
+    fld qword[eax+8*esi]
+    faddp
+    jmp calculator
+    finalstep:
+    fld qword[ebp+8]
+    fdivp
+    mov esp,ebp
+    pop ebp
+    ret
+standardDeviation:
+    push ebp
+    mov ebp,esp
+    mov esi,0
+    mov eax,[ebp+16]
+    mov edi,[N]
+    dec edi
+    calculator1:
+    cmp esi,edi
+    jg finalstep1
+    fld qword[ebp+20]
+    fld qword[eax+8*esi]
+    fsubp
+    fmul st0
+    fadd qword[m_xsquare]
+    fstp qword[m_xsquare]
+    inc esi
+    jmp calculator1
+    finalstep1:
+    fld qword[ebp+8]
+    fld qword[m_xsquare]
+    fdivp
+    mov esp,ebp
+    pop ebp
+    ret
+    
+    
+    
