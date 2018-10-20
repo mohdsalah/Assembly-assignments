@@ -1,0 +1,30 @@
+%include "io.inc"
+extern _printf
+section .data
+    Cipher: db "XYZABCDEFGHIJKLMNOPQRSTUVW",0
+    input: db "MOHAMMED",0
+    len: dd $-input-1
+    output: db "00000000",0
+section .text
+global CMAIN
+CMAIN:
+    mov ebp, esp; for correct debugging
+    ;write your code here
+    xor eax, eax
+    mov ebx,Cipher
+    mov esi,0
+    mov ecx,[len]
+    mov edi,output
+    encrypter:
+        mov al,[input+esi]
+        sub al ,"A"
+        xlat
+        mov [edi],eax
+        inc esi
+        inc edi
+        loop encrypter
+    mov edi,0
+    push output
+    call _printf
+    add esp,4
+    ret

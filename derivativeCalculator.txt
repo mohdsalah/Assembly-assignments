@@ -1,0 +1,85 @@
+%include "io.inc"
+extern _printf
+section .data
+    x: dq 0.0
+    e: dq 0.001
+    f: dq 0.0
+    d: dq 0.0
+    constant1: dq 3.0
+    constant2: dq 2.0
+    fmt: db "x=%f and its derivative = %f",10,0
+    stepLen: dq 0.1
+section .text
+global CMAIN
+CMAIN:
+    mov ebp, esp; for correct debugging
+    ;mov ebp, esp; for correct debugging
+    ;write your code here
+    xor eax, eax
+    finit
+    mov ebx,0
+    table_printer:
+    sub esp,8
+    fld qword[x]
+    fstp qword[esp]
+    push fa
+    call deriv
+    fstp qword[d]
+    add esp,12
+    sub esp,8
+    fld qword[d]
+    fstp qword[esp]
+    sub esp,8
+    fld qword[x]
+    fstp qword[esp]
+    push fmt
+    call _printf
+    add esp ,20
+    fld qword[x]
+    fadd qword[stepLen]
+    fstp qword[x]
+    add ebx,1
+    cmp ebx,20
+    jne table_printer
+    ret
+fa:
+    push ebp
+    mov ebp,esp
+    fld qword [ebp+8]
+    fmul qword[constant1]
+    sub esp,8
+    fstp qword[esp]
+    fld qword[ebp+8]
+    fmul qword[ebp+8]
+    fsub qword[esp]
+    sub esp,8
+    fstp qword[esp]
+    fld qword[constant2]
+    fadd qword[esp]
+    mov esp, ebp
+    pop ebp  
+    ret
+deriv:
+    push ebp
+    mov ebp,esp
+   sub esp,8
+    fld qword [ebp+12]
+    fstp qword [esp]
+    call [ebp+8]
+    fstp qword[esp]
+    sub esp,8
+    fld qword[ebp+12]
+    fadd qword[e]
+    fstp qword[esp]
+    call [ebp+8]
+    add esp,8
+    fld qword [esp]
+    fsubp
+    fdiv qword[e]
+    mov esp,ebp
+    pop ebp
+    ret
+
+    
+    
+    

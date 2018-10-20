@@ -1,0 +1,72 @@
+%include "io.inc"
+global CMAIN
+extern _printf
+section.data:
+    table: db "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",0
+    input: db "DM144074",0
+    output: db "0"
+
+CMAIN:
+    mov ebp, esp; for correct debugging
+    ;write your code here
+    xor eax, eax
+    xor edi,edi
+    mov ebx,table
+    mov esi, input
+    mov edx,output
+    mov ecx,8
+    checker:
+        cmp ecx,3
+        ja threeByte
+        jb twoByte
+
+     threeByte:
+        jmp threeByteOrganizer
+        operation1:
+        shr eax,18
+        xlat
+        mov [edi],al
+        inc edi
+        mov eax,esi
+        bswap eax
+        shr eax,8
+        shr eax,12
+        and eax,0x3f
+        xlat
+        mov [edi],al
+        inc edi
+        jmp threeByteOrganizer
+        shr eax,6
+        and eax, 0x3f
+        xlat
+        mov [edi],al
+        inc edi
+        sub ecx,3
+        jmp checker
+    twoByte:
+        jmp twoByteOrganizer
+        operation2:
+        shr eax,10
+        xlat
+        mov [edi],eax
+        inc edi
+        jmp twoByteOrganizer
+        and eax, 0x3f
+        xlat
+        mov [edi],eax
+    threeByteOrganizer:
+        mov eax,esi
+        bswap eax
+        shr eax,8
+        jmp operation1
+    twoByteOrganizer:
+        mov eax,esi
+        bswap eax
+        shr eax,16
+        jmp operation2
+    
+    push edi
+    call _printf
+    add esp,4
+    ret
+      

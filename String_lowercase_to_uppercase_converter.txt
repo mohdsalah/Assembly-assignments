@@ -1,0 +1,31 @@
+%include "io.inc"
+global _main
+extern _printf
+section .data
+        message: db "assembly",0
+        
+
+section .text
+_main:
+    mov ebp, esp; for correct debugging
+
+    mov ebx,message
+    
+    converter:
+        mov eax,[ebx]
+        cmp eax,0
+        jz printer
+        sub eax,20h
+        mov [ebx],eax
+        inc ebx
+        jmp converter
+    
+    
+    
+    printer:
+        push message
+        call _printf
+    
+    add  esp , 4
+    
+    ret

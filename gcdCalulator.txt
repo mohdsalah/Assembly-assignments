@@ -1,0 +1,39 @@
+%include "io.inc"
+;global _main
+extern _printf
+section .data
+        m: dd 18
+        n: dd 12
+        gcd: dd 0
+        FormatStr: db "the GCD of 18 nd 12 is %d",0
+section .text
+global CMAIN
+CMAIN:
+    mov ebp, esp; for correct debugging
+
+    mov eax,[m]
+    mov ebx,[n]
+    cmp ebx,eax
+    jb subtractor
+    ja exchanger
+    jz finalGCD
+    subtractor:
+            sub eax,ebx
+            cmp ebx,eax
+            jb subtractor
+            ja exchanger
+            jz finalGCD
+    exchanger:
+            xchg eax,ebx
+            jmp subtractor
+    finalGCD:
+            mov [gcd],ebx
+            mov ebx,[gcd]
+            push ebx
+            push FormatStr
+            call _printf
+            add esp,8
+            
+
+    
+    ret

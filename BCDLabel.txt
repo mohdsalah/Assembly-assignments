@@ -1,0 +1,33 @@
+%include "io.inc"
+extern _printf
+section .data
+    table: db "0000000100100011010001010110011110001001",0
+    Decimal: db "144074",0
+    len: dd $-Decimal-1
+    BCDLabel: db "000000",0
+section .text
+global CMAIN
+CMAIN:
+    mov ebp, esp; for correct debugging
+    ;write your code here
+    xor eax, eax
+    mov ebx,table
+    mov ecx,[len]
+    mov esi,0
+    mov edi,BCDLabel
+    mov ebp,4              ; the factor that every bit is 4 bits in table
+    converter:
+        mov al,[Decimal+esi]
+        sub al,"0"
+        mul ebp
+        mov edx,[ebx+eax]
+        mov[edi],edx
+        inc esi
+        add edi,4
+        loop converter
+    mov Byte[edi],0
+    push BCDLabel
+    call _printf
+    add esp,4
+    
+    ret

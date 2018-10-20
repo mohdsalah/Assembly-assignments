@@ -1,0 +1,64 @@
+%include "io.inc"
+extern _printf
+section .data
+    x: dq 3.0
+    e: dq 0.001
+    f: dq 0.0
+    d: dq 0.0
+    constant1: dq 3.0
+    constant2: dq 2.0
+    fmt: db "%f",10
+section .text
+global CMAIN
+CMAIN:
+    mov ebp, esp; for correct debugging
+    ;mov ebp, esp; for correct debugging
+    ;write your code here
+    xor eax, eax
+    finit
+    sub esp,8
+    fld qword[x]
+    fstp qword[esp]
+    call fa
+    call deriv
+    sub esp,8
+    fstp qword[esp]
+    push fmt
+    call _printf
+    add esp ,20
+    ret
+fa:
+    push ebp
+    mov ebp,esp
+    fld qword [ebp+8]
+    fmul qword[constant1]
+    sub esp,8
+    fstp qword[esp]
+    fld qword[ebp+8]
+    fmul qword[ebp+8]
+    fsub qword[esp]
+    sub esp,8
+    fstp qword[esp]
+    fld qword[constant2]
+    fadd qword[esp]
+    mov esp, ebp
+    pop ebp  
+    ret
+deriv:
+    push ebp
+    mov ebp,esp
+    sub esp,8
+    fstp qword[esp]
+    fld qword[esp+8]
+    fadd qword[e]
+    fstp qword[ebp+8]
+    call fa
+    fsub qword[esp]
+    fdiv qword[e]
+    mov esp,ebp
+    pop ebp
+    ret
+
+    
+    
+    

@@ -1,0 +1,55 @@
+%include "io.inc"
+extern _fopen
+extern _fprintf
+extern _printf
+extern _fclose
+section .data
+    a: dq 0.1
+    b: dq 0.2
+    c: dq 0.0
+    read_write_selection: db 'w',0
+    file_path: db 'C:\\Users\\hamad\\Documents\\fileOpener.txt' ,0
+    f: db '%f + %f = %f',0
+    not_found: db 'fopen failed',0
+    f2: db '%s',0
+section .text
+global CMAIN
+CMAIN:
+    mov ebp, esp; for correct debugging
+    ;write your code here
+    xor eax, eax
+    fld qword [a]
+    fadd qword [b]
+    fstp qword [c]
+    push read_write_selection
+    push file_path
+    call _fopen
+    add esp,8
+    cmp eax,0
+    je failure
+   
+    sub esp,8
+    fld qword [c]
+    fstp qword [esp]
+    sub esp,8
+    fld qword [b]
+    fstp qword [esp]
+    sub esp,8
+    fld qword [a]
+    fstp qword [esp]
+    push f
+    push eax
+    call _fprintf
+    add esp,32
+    
+    jmp return
+failure:
+    push not_found
+    push f2
+    call _printf
+    add esp,8
+return:
+    push file_path
+    call _fclose
+    add esp,4
+    ret
